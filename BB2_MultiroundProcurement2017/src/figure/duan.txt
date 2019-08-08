@@ -1,0 +1,27 @@
+8
+1 3
+2 2
+3 2
+4 2
+5 2
+6 3
+7 3
+8 1
+1.PC:200:16000 Laptop:25:20000
+2.Server_UPS:5:22000 Projector:35:25000 Point_Lightning_Protection:1:35000
+3.Video_Encoding:1:227040 Auto_Camera:1:313500 Electric_Pen:1:41800 Recorder:1:705320 Micro:2:17600 Screen_65:4:83600 Screen_48:1:18744 Screen_24:1:5720 Splitter:1:33000 Amplifier:1:11880 Speaker:6:1760
+4.Printer:250:5000 Color_printer:20:15000 Scanner:200:4000
+5.Modem:200:3000 Router:10:18700 Switch:250:5170
+6.PC:200:16000 Laptop:25:20000
+7.Accessories:1:31460 Training:1:20900
+8.Printer:260:5000 Color_printer:10:15000 Scanner:310:4000
+9.Modem:280:3000 Switch:260:5170
+10.PC:220:16000
+11.Rack:1:100000 UPS_Systems:1:145000 Lightning_protection-System:1:105000 Fire_Alarm_System:1:90000 Lift_Floor:20:3000 Surveillance_cameras:1:25000 Monitoring_system:1:99500 Light:1:15000 Cable:1:100000
+12.Routers_System:1:187300 KVM_Switch:2:49900
+13.Virtual_Server:3:625800 ATK_Server:1:433700 Protect_Server:2:162400 SAN_Storage:2:479200 SAN_Switch:2:111400
+14.Portal_Soft:1:800000
+15.PC:226:16000
+16.Server_OS:1:610000 Backup:1:125000 AntiVirus:1:9500
+17.Complaint_Management_Soft:1:500000
+18.File_Management_Soft:1:700000

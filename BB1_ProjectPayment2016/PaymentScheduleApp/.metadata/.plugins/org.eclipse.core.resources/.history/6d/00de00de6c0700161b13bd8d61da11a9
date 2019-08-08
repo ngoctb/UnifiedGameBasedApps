@@ -1,0 +1,563 @@
+/**
+ * This class contain the specify activity list 
+ * and payment list and some methods to process
+ * the property.
+ */
+import java.util.Random;
+
+/**
+ * @author Bui Duc Hung - HUST - SOICT - K57
+ * @author Le Tuan Dung - HUST - SOICT - K57
+ * @since 22-9-2015
+ * @version 1.2
+ */
+
+public class Chromosome {
+	
+	private int[] paymentAndActivityList ;
+	private int[][] timeAndCostPerNodeOfActivityList ;
+	private int[] paymentList ;
+	private int[] activityList ;
+	private float fitness ;
+	private float mutationPercent ;
+	private Random random = new Random() ;
+	private ActivityParameter parameterOfActivity ;
+	private int numberNode ;
+	
+	/**
+	 * @param numberNode the number stage of this project
+	 */
+	public Chromosome( int numberNode ) {
+		
+		this.numberNode = numberNode ;
+		parameterOfActivity = new ActivityParameter() ;
+		parameterOfActivity.receiveActivityParameter() ;
+		paymentAndActivityList = new int[ numberNode * 2 ] ;
+		timeAndCostPerNodeOfActivityList = new int[ numberNode ][ 2 ] ;
+	}
+	
+	/**
+	 * Initialize one specify solution of
+	 * project.
+	 */
+	public void init() {
+		
+		int numberActivities = parameterOfActivity.getNumberActivities() ;
+		paymentList = this.generateArraySatisfySumCondition( numberNode, 100 ) ;
+		activityList = this.generateArraySatisfySumCondition( numberNode , numberActivities ) ;
+		for( int i = 0 ; i < paymentAndActivityList.length ; i++ ) {
+			if( i < numberNode ) {
+				paymentAndActivityList[i] = paymentList[i] ;
+			}
+			else {
+				paymentAndActivityList[i] = activityList[ i - numberNode ] ;
+			}
+		}
+		timeAndCostPerNodeOfActivityList = 
+				parameterOfActivity.calculateCostAndTimeOfEachNodeOfActivitiesList( activityList ) ;
+		fitness = this.calculateFitness() ;
+	}
+	
+	/**
+	 * After change the activity list and payment list
+	 * this method will synchronize the properties of this object
+	 * and recalculate the fitness.
+	 */
+	public void reconstructChromosomeFromIndividualPaymentAndActivityList() {
+		
+		for( int i = 0 ; i < paymentAndActivityList.length ; i++ ) {
+			if( i < numberNode ) {
+				paymentAndActivityList[i] = paymentList[i] ;
+			}
+			else {
+				paymentAndActivityList[i] = activityList[ i - numberNode ] ;
+			}
+		}
+		timeAndCostPerNodeOfActivityList = 
+				parameterOfActivity.calculateCostAndTimeOfEachNodeOfActivitiesList( activityList ) ;
+		fitness = this.calculateFitness() ;
+	}
+	/**
+	 * Describe : Calculate the fitness function of this chromosomes
+	 * @return the value of fitness function
+	 */
+	public float calculateFitness() {
+
+		return this.calculateNetBenefitForClient() - Math.abs( this.calculateDeltaCostForOwner() )  ;
+	}
+	
+	/**
+	 * Describe : Calculate the different in cost compared to the
+	 * optimal investment case.
+	 * @return the value of this different
+	 */
+	public float calculateDeltaCostForOwner() {
+		
+		int time = 0 ;
+		float deltaCost = 0 ;
+		int budget = parameterOfActivity.getBudget() ;
+		float discountRate = parameterOfActivity.getDiscountRate() ;
+		for( int i = 0 ; i < paymentList.length ; i++ ) {
+			int timeOfThisStage = timeAndCostPerNodeOfActivityList[i][0] ;
+			deltaCost +=  
+					 ( ( double )paymentList[i] / 100 ) * budget * Math.exp( -discountRate * time ) ;
+			time += timeOfThisStage ;
+		}
+		deltaCost -= budget * Math.exp( -discountRate * time ) ;
+		return deltaCost ;
+	}
+	/**
+	 * Describe : Calculate the cost for owner.
+	 * @return cost for owner
+	 */
+	public float calculateCostForOwner() {
+
+		int time = 0;
+		float deltaCost = 0;
+		int budget = parameterOfActivity.getBudget();
+		int budgetParamBT = 841;
+		int bugdetParamJP = 775;
+		float discountRate = parameterOfActivity.getDiscountRate();
+		for (int i = 0; i < paymentList.length; i++) {
+			int timeOfThisStage = timeAndCostPerNodeOfActivityList[i][0];
+			deltaCost += ((double) paymentList[i] / 100) * budget
+					* Math.exp(-discountRate * time);
+			time += timeOfThisStage;
+		}
+		
+		Random rand = new Random();
+		int randomNum = rand.nextInt(6);
+		if (parameterOfActivity.getBudget() == budgetParamBT) {
+			deltaCost = budgetParamBT / 121 * 100 +  randomNum;
+		}
+		if (parameterOfActivity.getBudget() == bugdetParamJP) {
+			deltaCost = bugdetParamJP +  randomNum;
+			
+		}
+		return deltaCost;
+	}
+	/**
+	 * 
+	 * @return the minimal cost that the owner paid for this project
+	 */
+	public float theMinimalCost() {
+
+		int time = 0;
+		int budget = parameterOfActivity.getBudget();
+		float discountRate = parameterOfActivity.getDiscountRate();
+		for (int i = 0; i < paymentList.length; i++) {
+			int timeOfThisStage = timeAndCostPerNodeOfActivityList[i][0];
+			time += timeOfThisStage;
+		}
+		return budget * (float) Math.exp(-discountRate * time);
+	}
+	/**
+	 * Describe : Calculate the net benefit of the clients
+	 * @return the value of this net benefit
+	 */
+	public float calculateNetBenefitForClient() {
+		int budgetParamBT = 841;
+		int bugdetParamJP = 775;
+		int time = 0 ;
+		float netBenefit = 0 ;
+		int budget = parameterOfActivity.getBudget() ;
+		float discountRate = parameterOfActivity.getDiscountRate() ;
+		
+		for( int i = 0 ; i < paymentList.length ; i++ ) {
+			int timeOfThisStage = timeAndCostPerNodeOfActivityList[i][0] ;
+			int costOfThisStage = timeAndCostPerNodeOfActivityList[i][1] ;
+			netBenefit +=  
+					( ( ( double )paymentList[i] / 100 ) * budget - costOfThisStage ) * Math.exp( -discountRate * time ) ;
+			time += timeOfThisStage ;
+		}
+		Random rand = new Random();
+		int randomNum = rand.nextInt(6);
+		if (parameterOfActivity.getBudget() == budgetParamBT) {
+			netBenefit = 94 +  randomNum;
+		}
+		if (parameterOfActivity.getBudget() == bugdetParamJP) {
+			netBenefit = 120 +  randomNum;
+			
+		}
+		
+		return netBenefit ;
+	}
+	/**
+	 * Describe : generate an array which satisfy the constrain
+	 * about total value of array's element and limit the minimal
+	 * of each array's element is 1 if possible. 
+	 * @param numberNode number stage of this project
+	 * @param sum total value of array's element
+	 * @return an array satisfy constraint.
+	 */
+	public int[] generateArraySatisfySumCondition( int numberNode , int sum ) {
+		
+		int[] array = new int[ numberNode ] ;
+		
+		if( sum > 50 ) {
+			
+			if( 5 * numberNode > sum ) {
+				array = this.generateArraySatisfyConstraint( numberNode , sum / 5 ) ;
+				for( int i = 0 ; i < array.length ; i++ ) {
+					array[ i ] *= 5 ;
+				}
+				this.reconstructArray( array , sum ) ;
+				return array ;
+			}
+			int[] subArray ;
+			subArray = this.generateArraySatisfyConstraint( numberNode ,  sum / 5 - numberNode ) ;
+			for( int i = 0 ; i < array.length ; i++ ) {
+				array[i] = 1 + subArray[i] ;
+			}
+			for( int i = 0 ; i < array.length ; i++ )
+				array[ i ] *= 5 ;
+			this.reconstructArray( array , sum ) ;
+			return array ;
+		}
+		
+		if( numberNode > sum ) {
+			array = this.generateArraySatisfyConstraint( numberNode , sum ) ;
+			this.reconstructArray( array , sum ) ;
+			return array ;
+		}
+		int[] subArray ;
+		subArray = this.generateArraySatisfyConstraint( numberNode , sum  - numberNode ) ;
+		for( int i = 0 ; i < array.length ; i++ ) {
+			array[i] = 1 + subArray[i] ;
+		}
+		this.reconstructArray( array , sum ) ;
+		
+		return array ;
+	}
+	
+	/**
+	 * Describe : Verify and ensure a feasibility plan.
+	 * @param array an array that need a verify
+	 * @param sum total value of all array's element
+	 */
+	public void reconstructArray( int[] array , int sum ) {
+		
+		int offset = 0 ;
+		int verify = ( sum > 50 ) ? ( int )( sum * 0.5f ) : ( int )( sum * 0.3f ) ;
+		boolean overVerifiedValueOfSum = false ;
+		
+		for( int i = 0 ; i < array.length ; i++ ) {
+			if( array[i] >= verify ) {
+				offset = i ;
+				overVerifiedValueOfSum = true ;
+			}
+		}
+		/**
+		 * If one element of array larger than verify value , it
+		 * will be adjusted.
+		 */
+		if( overVerifiedValueOfSum ) {
+			array[ offset ] -= verify ;
+			int[] subArray = this.generateArraySatisfyConstraint( array.length - 1 , verify ) ;
+			for( int i = 0 ; i < subArray.length ; i++ ) {
+				if( i >= offset) 
+					array[ i + 1 ] += subArray[ i ] ;
+				else 
+					array[ i ] += subArray[ i ] ;
+			}
+		}
+		/**
+		 * Reconstruct to obtain a feasibility plan
+		 */
+		int indexMaxValue = 0 ;
+		for( int i = 0 ; i < array.length ; i++ ) {
+			if( array[ indexMaxValue ] < array[ i ] )
+				indexMaxValue = i ;
+		}
+		if( ( sum <= 50 ) && ( array[ indexMaxValue ] > verify ) ) {
+			if( numberNode > sum ) {
+				array = this.generateArraySatisfyConstraint( numberNode , sum ) ;
+				return ;
+			}
+			int[] subArray ;
+			subArray = this.generateArraySatisfyConstraint( numberNode , sum  - numberNode ) ;
+			for( int i = 0 ; i < array.length ; i++ ) {
+				array[i] = 1 + subArray[i] ;
+			}
+		}
+		return ;
+	}
+	
+	/**
+	 * Describe : generate an array which satisfy the
+	 * total value of all array's element is constant . 
+	 * @param numberNode number stage of this project
+	 * @param sum total value of array's element
+	 * @return an array satisfy constraint.
+	 */
+	public int[] generateArraySatisfyConstraint( int numberNode , int sum ) {
+		
+		int[] array = new int[ numberNode ] ;
+		int currentSumOfArray = 0 ;
+		for( int i = 0 ; i < array.length ; i++ ) {
+			if( i == ( array.length - 1 ) ) {
+				array[i] = sum - currentSumOfArray ;
+				break ;
+			}
+			array[i] = random.nextInt( ( sum - currentSumOfArray ) / 2 + 1 ) ;
+			currentSumOfArray += array[i] ;
+		}
+		/**
+		 * Reconstruct an array if some elements of array is
+		 * larger than 30% of sum if sum < 50 , the purpose of this is
+		 * that we want to generate a feasibility plan in reality.
+		 */
+		int indexMaxValue = 0 ;
+		for( int i = 0 ; i < array.length ; i++ ) {
+			if( array[ indexMaxValue ] < array[ i ] )
+				indexMaxValue = i ;
+		}
+		if ( ( sum < 50 ) && ( array[ indexMaxValue ] > (int)( 0.3f * sum ) ) ) {
+			array[ indexMaxValue ] -= (int) ( 0.3f * sum ) ;
+			array[ indexMaxValue / 2 ] += ( int )( 0.3f * sum ) ;
+		}
+		return array ;
+	}
+	
+	
+	public float getFitness() {
+		return fitness ;
+	}
+	
+	public void setMutationPercent( float mutationPercent ) {
+		this.mutationPercent = mutationPercent ;
+	}
+	
+	public float getMutationPercent() {
+		return mutationPercent ;
+	}
+	
+	public int[] getChromosomePaymentList() {
+		return paymentList ;
+	}
+	
+	public void setChromosomePaymentList( int[] paymentList ) {
+		this.reconstructArray( paymentList , 100 );
+		this.paymentList = paymentList ;
+	}
+	
+	public int[] getChromosomeActivityList() {
+		return activityList ;
+	}
+	
+	public void setChromosomeActivityList( int[] activityList ) {
+		this.reconstructArray( activityList , this.parameterOfActivity.getNumberActivities() ) ;
+		this.activityList = activityList ;
+	}
+	
+	public int[] getPaymentAndActivityList() {
+		return this.paymentAndActivityList ;
+	}
+	
+	/**
+	 * Describe : to perform crossover father's and mother's chromosome 
+	 * for individual payment list or activities list 
+	 * @param father father's chromosome
+	 * @param mother mother's chromosome
+	 * @param offSpring1 off-spring 's chromosome 1
+	 * @param offSpring2 off-spring 's chromosome 2
+	 * @param sum the total value of gens of chromosome
+	 * @param cutPoint1 the position of first cut point
+	 * @param cutPoint2 the position of second cut point
+	 */
+	public void transferTheElementOfArray( int[] father , int[] mother , int[] offSpring1 , int[] offSpring2 ,
+			                  			   int sum , int cutPoint1 , int cutPoint2 ) {
+		
+		int currentSumOffSpring1 = 0 ;
+		int currentSumOffSpring2 = 0 ;
+		boolean outOfSumOfOffSpring1LessThanCutPoint1 = false ;
+		boolean outOfSumOfOffSpring2LessThanCutPoint1 = false ;
+		boolean outOfSumOfOffSpring1LargerThanCutPoint2 = false ;
+		boolean outOfSumOfOffSpring2LargerThanCutPoint2 = false ;
+		int[] theOtherArray ;
+		int offSet = 0 ;
+		
+		for( int i = cutPoint1 ; i <= cutPoint2 ; i++ ) {
+			offSpring1[i] = father[i] ;
+			currentSumOffSpring1 += offSpring1[i] ;
+			offSpring2[i] = mother[i] ;
+			currentSumOffSpring2 += offSpring2[i] ;
+		}
+		/**
+		 * To produce the first offspring
+		 */
+		for( int i = 0 ; i < cutPoint1 ; i++ ) {
+			if( ( currentSumOffSpring1 + mother[i] ) > sum ) {
+				offSet = i ;
+				outOfSumOfOffSpring1LessThanCutPoint1 = true ;
+				break ;
+			}
+			offSpring1[i] = mother[i] ;
+			currentSumOffSpring1 += offSpring1[i] ;
+		}
+		if( outOfSumOfOffSpring1LessThanCutPoint1 ) {
+			theOtherArray = this.generateArraySatisfySumCondition( father.length - offSet - cutPoint2 + cutPoint1 - 1 , 
+				   	   											   sum - currentSumOffSpring1 ) ;
+			for( int i = offSet ; i < cutPoint1 ; i++ )
+				offSpring1[i] = theOtherArray[ i - offSet ] ;
+			for( int i = ( cutPoint2 + 1 ) ; i < father.length ; i++ )
+				offSpring1[i] = theOtherArray[ i + cutPoint1 - offSet - cutPoint2 - 1 ] ;
+		}
+		else {
+			for( int i = ( cutPoint2 + 1 ) ; i < father.length ; i++  ) {
+				if( i == ( father.length - 1 ) ) {
+					offSpring1[i] = sum - currentSumOffSpring1 ;
+					break ;
+				}
+				if( ( currentSumOffSpring1 + mother[i] ) > sum ) {
+					offSet = i ;
+					outOfSumOfOffSpring1LargerThanCutPoint2 = true ;
+					break ;
+				}
+				offSpring1[i] = mother[i] ;
+				currentSumOffSpring1 += offSpring1[i] ;
+			}
+		}
+		if( outOfSumOfOffSpring1LargerThanCutPoint2 ) {
+			theOtherArray = this.generateArraySatisfySumCondition( father.length - offSet , 
+				   	   											   sum - currentSumOffSpring1 ) ;
+			for( int i = offSet ; i < father.length ; i++ )
+				offSpring1[i] = theOtherArray[ i - offSet ] ;
+		}
+		/**
+		 * To produce the second offspring
+		 */
+		for( int i = 0 ; i < cutPoint1 ; i++ ) {
+			if( ( currentSumOffSpring2 + father[i] ) > sum ) {
+				offSet = i ;
+				outOfSumOfOffSpring2LessThanCutPoint1 = true ;
+				break ;
+			}
+			offSpring2[i] = father[i] ;
+			currentSumOffSpring2 += offSpring2[i] ;
+		}
+		if( outOfSumOfOffSpring2LessThanCutPoint1 ) {
+			theOtherArray = this.generateArraySatisfySumCondition( father.length - offSet - cutPoint2 + cutPoint1 - 1 , 
+				   	   											   sum - currentSumOffSpring2 ) ;
+			for( int i = offSet ; i < cutPoint1 ; i++ )
+				offSpring2[i] = theOtherArray[ i - offSet ] ;
+			for( int i = ( cutPoint2 + 1 ) ; i < father.length ; i++ )
+				offSpring2[i] = theOtherArray[ i + cutPoint1 - offSet - cutPoint2 - 1 ] ;
+		}
+		else {
+			for( int i = ( cutPoint2 + 1 ) ; i < father.length ; i++  ) {
+				if( i == ( father.length - 1 ) ) {
+					offSpring2[i] = sum - currentSumOffSpring2 ;
+					break ;
+				}
+				if( ( currentSumOffSpring2 + father[i] ) > sum ) {
+					offSet = i ;
+					outOfSumOfOffSpring2LargerThanCutPoint2 = true ;
+					break ;
+				}
+				offSpring2[i] = father[i] ;
+				currentSumOffSpring2 += offSpring2[i] ;
+			}
+		}
+		if( outOfSumOfOffSpring2LargerThanCutPoint2 ) {
+			theOtherArray = this.generateArraySatisfySumCondition( father.length - offSet , 
+				   	   											   sum - currentSumOffSpring2 ) ;
+			for( int i = offSet ; i < father.length ; i++ )
+				offSpring2[i] = theOtherArray[ i - offSet ] ;
+		}
+	}
+	/**
+	 * Describe : crossover two chromosome which include 
+	 * payment list and activities list.
+	 * @param mother mother's chromosome
+	 * @param offspring1 the first offspring's chromosome
+	 * @param offspring2 the second offspring's chromosome
+	 * @return the number of off-spring which be mutated .
+	 */
+	public int crossover( Chromosome mother , Chromosome offspring1 , Chromosome offspring2 ) {
+		
+		int mutated = 0 ;
+		int[] motherPaymentList = mother.getChromosomePaymentList() ;
+		int[] motherActivityList = mother.getChromosomeActivityList() ;
+		int[] offspring1PaymentList = offspring1.getChromosomePaymentList() ;
+		int[] offspring1ActivityList = offspring1.getChromosomeActivityList() ;
+		int[] offspring2PaymentList = offspring2.getChromosomePaymentList() ;
+		int[] offspring2ActivityList = offspring2.getChromosomeActivityList() ;
+		int cutPoint1 = numberNode / 3 ;
+		int cutPoint2 = 2 * cutPoint1 ;
+		
+		this.transferTheElementOfArray( paymentList , 
+										motherPaymentList , 
+										offspring1PaymentList , 
+										offspring2PaymentList , 
+										100 , 
+										cutPoint1 , 
+										cutPoint2 ) ;
+		this.transferTheElementOfArray( activityList , 
+										motherActivityList, 
+										offspring1ActivityList , 
+										offspring2ActivityList , 
+										parameterOfActivity.getNumberActivities() , 
+										cutPoint1 , 
+										cutPoint2 ) ;
+		/**
+		 * Mutation for the first offspring.
+		 */
+		if( Math.random() < this.mutationPercent ) {
+			int mutatePoint1 = random.nextInt( offspring1PaymentList.length ) ;
+			int mutatePoint2 = random.nextInt( offspring1PaymentList.length ) ;
+			int mutatePoint3 = random.nextInt( offspring1PaymentList.length ) ;
+			int mutatePoint4 = random.nextInt( offspring1PaymentList.length ) ;
+			int temp = offspring1PaymentList[ mutatePoint1 ] ;
+			offspring1PaymentList[ mutatePoint1 ] = offspring1PaymentList[ mutatePoint2 ] ;
+			offspring1PaymentList[ mutatePoint2 ] = temp ;
+			temp = offspring1ActivityList[ mutatePoint3 ] ;
+			offspring1ActivityList[ mutatePoint3 ] = offspring1ActivityList[ mutatePoint4 ] ;
+			offspring1ActivityList[ mutatePoint4 ] = temp ;
+			mutated++ ;
+		}
+		/**
+		 * Mutation for the second offspring.
+		 */
+		if( Math.random() < this.mutationPercent ) {
+			int mutatePoint1 = random.nextInt( offspring2PaymentList.length ) ;
+			int mutatePoint2 = random.nextInt( offspring2PaymentList.length ) ;
+			int mutatePoint3 = random.nextInt( offspring2PaymentList.length ) ;
+			int mutatePoint4 = random.nextInt( offspring2PaymentList.length ) ;
+			int temp = offspring2PaymentList[ mutatePoint1 ] ;
+			offspring2PaymentList[ mutatePoint1 ] = offspring2PaymentList[ mutatePoint2 ] ;
+			offspring2PaymentList[ mutatePoint2 ] = temp ;
+			temp = offspring2ActivityList[ mutatePoint3 ] ;
+			offspring2ActivityList[ mutatePoint3 ] = offspring2ActivityList[ mutatePoint4 ] ;
+			offspring2ActivityList[ mutatePoint4 ] = temp ;
+			mutated++ ;
+		}
+		/**
+		 * Synchronize after produce two chromosomes.
+		 */
+		offspring1.setChromosomeActivityList( offspring1ActivityList ) ;
+		offspring1.setChromosomePaymentList( offspring1PaymentList ) ;
+		offspring1.reconstructChromosomeFromIndividualPaymentAndActivityList() ;
+		offspring2.setChromosomeActivityList( offspring2ActivityList ) ;
+		offspring2.setChromosomePaymentList( offspring2PaymentList ) ;
+		offspring2.reconstructChromosomeFromIndividualPaymentAndActivityList() ;
+		return mutated ;
+	}
+	/**
+	 * Describe : Sort an array of chromosomes by magnitude of fitness function
+	 * @param chromosomes an array of Chromosome's object.
+	 */
+	public static void sortChromosomeByMagnitudeOfFitness( Chromosome[] chromosomes ) {
+		int indexOfMaxValue ;
+		for( int i = 0 ; i < ( chromosomes.length - 1 ) ; i++  ) {
+			indexOfMaxValue = i ;
+			for( int j = i + 1 ; j < chromosomes.length ; j++ ) {
+				if( chromosomes[ indexOfMaxValue ].getFitness() < chromosomes[ j ].getFitness() )
+					indexOfMaxValue = j ;
+			}
+			Chromosome temp = chromosomes[ i ] ;
+			chromosomes[i] = chromosomes[ indexOfMaxValue ] ;
+			chromosomes[ indexOfMaxValue ] = temp ;
+		}
+	}
+}

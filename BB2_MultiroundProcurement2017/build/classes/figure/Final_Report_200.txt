@@ -1,0 +1,11 @@
+Tong so gen: 100
+Tong so vong doi: 3
+Phan tram lai ghep: 60%
+Phan tram dot bien: 10%
+ Gen tot nhat: 
+         Ma gen:          [2 2 6 6 3 5 3 6 4 6 1 4 6 2 6 6 4 3 ]          Fitness: 8296088682
+
+                  Loi nhuan nha thau: 1729000000
+                  Loi nhuan chu dau tu: 4838088672
+
+Sucessfully after 0 hours 0 minutes 9 seconds

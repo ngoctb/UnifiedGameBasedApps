@@ -1,0 +1,299 @@
+/**
+ * This class will solve the problem about management project
+ * payment and use the thread to exploit the computation ability of multiprocessor .
+ */
+import java.applet.Applet;
+import java.awt.*;
+import java.awt.event.*;
+import java.text.*;
+import java.util.Random;
+
+/**
+ * @author Bui Duc Hung - HUST - SOICT - K57
+ * @author Le Tuan Dung - HUST - SOICT - K57
+ * @since 20-9-2015
+ * @version 1.0
+ */
+@SuppressWarnings("serial")
+public class ProjectPayment extends Applet implements Runnable {
+
+  /**
+   * Number stage of project.
+   */
+  private int numberNode ;
+
+  /**
+   * the population size
+   */
+  private int populationSize ;
+
+  /**
+   * the mutation percent
+   */
+  private float mutationPercent ;
+  
+  private Random random = new Random() ;
+
+  /**
+   * The size of population to crossover.
+   */
+  private int crossoverPopulationSize;
+  
+  /**
+   * The half of crossoverPopulation.
+   */
+  private int halfOfCrossoverPopulationSize;
+
+  /**
+   * Number generation
+   */
+  private int generation;
+
+  /**
+   * The current thread
+   */
+  private Thread thread = null;
+
+  /**
+   * Status of current thread.
+   */
+  private boolean started = false;
+
+  /**
+   * An array of chromosome.
+   */
+  private Chromosome[] chromosomes;
+
+  /**
+   * The Start button.
+   */
+  private Button startButton;
+
+  /**
+   * The TextField contain the number of stage of project.
+   */
+  private TextField textFieldOfNumberNode;
+
+  /**
+   * The TextField contain the population size.
+   */
+  private TextField textFieldOfPopulationSize;
+
+  /**
+   * The TextField for the mutation percent.
+   */
+  private TextField textFieldOfMutationPercent;
+
+  /**
+   * The controller panel hold all of button
+   */
+  private Panel controllerButton ;
+
+  /**
+   * The status of problem .
+   */
+  private String status = "";
+  /**
+   * The solution for this problem
+   */
+  private int[] paymentAndActivityList = { 0 } ;
+  /**
+   * The net benefit for client
+   */
+  private float netBenefit = 0.0f ;
+
+  /**
+   * Initialize the panel controller and some default value of text field.
+   */
+  public void init()
+  {
+    setLayout(new BorderLayout());
+    controllerButton = new Panel();
+    startButton = new Button("Start");
+    controllerButton.add( startButton );
+    controllerButton.add(new Label("Number Node Of Project:"));
+    controllerButton.add( textFieldOfNumberNode = new TextField(5));
+    controllerButton.add(new Label(",Population Size:"));
+    controllerButton.add( textFieldOfPopulationSize = new TextField(5));
+    controllerButton.add(new Label(",Mutate(%):"));
+    controllerButton.add( textFieldOfMutationPercent = new TextField(5));
+    this.add( controllerButton , BorderLayout.SOUTH ) ;
+    textFieldOfPopulationSize.setText("100");
+    textFieldOfMutationPercent.setText("0.10");
+    textFieldOfNumberNode.setText("9");
+    startButton.addActionListener(new ActionListener()
+    {
+
+      public void actionPerformed( ActionEvent actionEvent )
+      {
+        startThread();
+      }
+    });
+
+    started = false;
+    update();
+  }
+  
+  public boolean getStatusStarted() {
+	  return this.started ;
+  }
+  
+  public void setStatusStarted( boolean started ) {
+	  this.started = started ;
+  }
+
+  /**
+   * Start the thread.
+   */
+  public void startThread() {
+
+	  try
+	  {
+		  numberNode = Integer.parseInt( textFieldOfNumberNode.getText());
+	  }
+	  catch(NumberFormatException e)
+	  {
+		  numberNode = 9 ;
+	  }
+
+	  try
+	  {
+		  populationSize = Integer.parseInt( textFieldOfPopulationSize.getText());
+	  }
+	  catch(NumberFormatException e)
+	  {
+		  populationSize = 100 ;
+	  }
+
+	  try
+	  {
+		  mutationPercent = Float.parseFloat( textFieldOfMutationPercent.getText()) ;
+	  }
+	  catch(NumberFormatException e)
+	  {
+		  mutationPercent = 0.10f ;
+	  }
+	  
+	  crossoverPopulationSize = populationSize / 2 ;
+	  halfOfCrossoverPopulationSize = crossoverPopulationSize / 2 ;
+
+	  chromosomes = new Chromosome[ populationSize ] ;
+	  for (int i = 0; i < populationSize ; i++ ) {
+		  chromosomes[i] = new Chromosome( numberNode ) ;
+		  chromosomes[i].init() ;
+		  chromosomes[i].setMutationPercent( mutationPercent ) ;  
+	  }
+	  Chromosome.sortChromosomeByMagnitudeOfFitness( chromosomes ) ;
+
+	  started = true ;
+	  generation = 0 ;
+	  if ( thread != null )
+		  thread = null ;
+	  thread = new Thread(this) ;
+	  thread.setPriority(Thread.MIN_PRIORITY) ;
+	  thread.start() ;
+  }
+
+
+  /**
+   * Update and display the status.
+   */
+  public void update()
+  {
+	  Image img = createImage(getBounds().width, getBounds().height);
+	  Graphics g = img.getGraphics();
+	  FontMetrics fm = g.getFontMetrics();
+
+	  int width = getBounds().width;
+	  int bottom = controllerButton.getBounds().y - fm.getHeight() - 2;
+
+	  g.setColor(Color.BLACK ) ;
+	  g.fillRect(0, 0, width, bottom) ;
+	  g.setColor(Color.WHITE ) ;
+	  g.drawString(status, 0, 20 ) ;
+	  g.drawString( "Payment List :" , 0 , 50 ) ;
+	  g.drawString( "Activity List :" , 100 , 50 ) ;
+	  for( int i = 0 ; i < paymentAndActivityList.length ; i++ ) {
+		  if( i < numberNode ) 
+			  g.drawString(" " + paymentAndActivityList[i] + " " , 0 , i * 30 + 70 ) ;
+		  else
+			  g.drawString(" " + paymentAndActivityList[i] + " " , 100 , ( i - numberNode ) * 30 + 70 ) ;
+	  }
+	  getGraphics().drawImage(img, 0, 0, this) ;
+	  
+  }
+
+  /**
+   * Update the status.
+   * @param status The status.
+   */
+  public void setStatus(String status)
+  {
+    this.status = status;
+  }
+
+  /**
+   *  The process of thread to perform the loop .
+   */
+  public void run() {
+
+    float currentFitness = 0.0f;
+    float oldFitness = 0.0f;
+    int countSame = 0;
+
+    update();
+
+    while( countSame < 100 ) {
+
+      generation++;
+
+      int offset = crossoverPopulationSize ;
+      int mutated = 0;
+
+      for ( int i = 0 ; i < halfOfCrossoverPopulationSize ; i++ ) {
+        Chromosome chromosomeOfMother = chromosomes[i];
+        int indexChromosomeOfFather = random.nextInt( crossoverPopulationSize ) ;
+        Chromosome chromosomeOfFather = chromosomes[ indexChromosomeOfFather ];
+        if( ( offset + 1 ) < chromosomes.length ) {
+        	mutated += chromosomeOfFather.crossover( chromosomeOfMother , 
+        											 chromosomes[ offset ] , 
+        											 chromosomes[ offset + 1 ] ) ;
+            offset += 2 ;
+        }
+      }
+
+      Chromosome.sortChromosomeByMagnitudeOfFitness( chromosomes ) ;
+
+      float costForOwner = chromosomes[ 0 ].calculateCostForOwner() ;
+      float mutationRate = 100.0f * ( float )mutated / ( float )crossoverPopulationSize ;
+      this.netBenefit = chromosomes[0].calculateNetBenefitForClient() ;
+      paymentAndActivityList = chromosomes[0].getPaymentAndActivityList() ;
+      currentFitness =  chromosomes[0].getFitness() ;
+
+      NumberFormat numberFormat = NumberFormat.getInstance();
+      numberFormat.setMinimumFractionDigits(2);
+
+      this.setStatus( "Generation : " + generation + 
+    		  		  " Fitness : " + currentFitness + 
+    		  		  " Mutated : " + numberFormat.format( mutationRate ) + "%" + 
+    		  		  " With net benefit for client : " + this.netBenefit + " million dollar " +
+    		  		  " And money owner must paid is : " + costForOwner + " million dollar " ) ;
+      this.setStatus("NET benefit for client: " + this.netBenefit);
+      this.setStatus("NET benefit for investor: " + this.netBenefit);
+
+      if ( (int)currentFitness == (int)oldFitness ) {
+        countSame++;
+      } else {
+        countSame = 0 ;
+        oldFitness = currentFitness ;
+      }
+      update();
+    }
+    this.setStatus("Solution found after " + generation + " generations." ) ;
+  }
+  
+  public void paint(Graphics g)
+  {
+	  update();
+  }
+}
